@@ -1,6 +1,13 @@
 import streamlit as st
 import joblib
 import time
+import os
+# Get the current working directory
+current_directory = os.getcwd()
+
+# Define paths to model and vectorizer
+model_path = os.path.join(current_directory, "model", "sentiment_model.pkl")
+vectorizer_path = os.path.join(current_directory, "model", "vectorizer.pkl")
 
 # Set page title
 st.title("Restaurant Review Classification")
@@ -11,8 +18,8 @@ if 'model' not in st.session_state:
         with st.spinner('Hello! Please wait.. I am loading the model for you...'):
             time.sleep(4)
         # loading the model and vectorizer
-        st.session_state.model = joblib.load(r"/workspaces/Project-3-Restaurant-review-Classification/model/sentiment_model.pkl")
-        st.session_state.vectorizer = joblib.load(r"/workspaces/Project-3-Restaurant-review-Classification/model/vectorizer.pkl")
+        st.session_state.model = joblib.load(model_path)
+        st.session_state.vectorizer = joblib.load(vectorizer_path)
         st.session_state.model_loaded = True
         st.write("Model and vectorizer loaded successfully.")
     except Exception as e:
