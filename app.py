@@ -1,30 +1,56 @@
 import streamlit as st
-import base64
+import joblib
+import time
 
 # Set page title
 st.title("Restaurant Review Classification")
 
-# Model download button
-@st.cache_data
-def get_model_file():
-    # Need to correct model path when uploading
-    with open("model/sentiment_model.pkl", "rb") as file:
-        return file.read()
 
-model_data = get_model_file()
-b64_model = base64.b64encode(model_data).decode()
-href = f'<a href="data:file/model;base64,{b64_model}" download="sentiment_model.pkl">Download Model</a>'
-st.markdown(href, unsafe_allow_html=True)
+if 'model' not in st.session_state:
+    try:
+        with st.spinner('Hello! Please wait.. I am loading the model for you...'):
+            time.sleep(4)
+        # loading the model and vectorizer
+        st.session_state.model = joblib.load(r"model\sentiment_model.pkl")
+        st.session_state.vectorizer = joblib.load(r"model\vectorizer.pkl")
+        st.session_state.model_loaded = True
+        st.write("Model and vectorizer loaded successfully.")
+    except Exception as e:
+        st.session_state.model_loaded = False
+        st.write(f"Error loading model or vectorizer: {e}")
 
-# Input Window
-user_input = st.text_input("Enter your input:")
-
-# Submit Button
-if st.button("Submit"):
-    if user_input:
-        # Replace this with your model inference logic
-        output = f"Your model output for input '{user_input}'"
-        # Output Window
-        st.success(f"Output: {output}")
+else:
+    if st.session_state.model_loaded:
+        st.write("Model and vectorizer are already loaded.")
     else:
-        st.error("Please enter an input to proceed.")
+        st.write("There was an error loading the model and vectorizer.")
+
+# input window for review
+review = st.text_area("Enter your review here:")
+
+# Button to submit the review
+if st.button("Submit"):
+    if review:
+        if st.session_state.model_loaded:
+            with st.spinner('Processing your review...'):
+                time.sleep(2)
+            # Transform the new review using loaded vectorizer
+            review_transformer = st.session_state.vectorizer.transform([review])
+
+            # Predict sentiment using loaded model
+            prediction = st.session_state.model.predict(review_transformer)
+
+            # Display the result
+            sentiment = "Liked" if prediction[0] == 1 else "Not Liked"
+
+            # Set color based on sentiment
+            color = "blue" if sentiment == "Liked" else "red"
+
+            # Display the result with conditional color
+            st.subheader("Result:")
+            st.markdown(f"This Person <span style='color:{color};'>{sentiment}</span> This Restaurant.", unsafe_allow_html=True)
+        else:
+            st.write("Please load the model and vectorizer first.")
+
+    else:
+        st.write("Please enter a review before submitting.")
